@@ -1,0 +1,2 @@
+支持从nand flash和nor flash启动；
+支持设备树和非设备树方式启动内核。
