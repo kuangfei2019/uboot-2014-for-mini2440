@@ -11,17 +11,20 @@
 #include <asm/arch/s3c24x0_cpu.h>
 #include <asm/io.h>
 
-#define S3C2440_NFCONF_EN          (1<<15)
-#define S3C2440_NFCONF_512BYTE     (1<<14)
-#define S3C2440_NFCONF_4STEP       (1<<13)
-#define S3C2440_NFCONF_INITECC     (1<<12)
-#define S3C2440_NFCONF_nFCE        (1<<11)
-#define S3C2440_NFCONF_TACLS(x)    ((x)<<8)
-#define S3C2440_NFCONF_TWRPH0(x)   ((x)<<4)
-#define S3C2440_NFCONF_TWRPH1(x)   ((x)<<0)
+#define NF_BASE 0x4e000000
 
-#define S3C2440_ADDR_NALE 4
-#define S3C2440_ADDR_NCLE 8
+#define S3C2440_NFCONT_EN          (1<<0)
+#define S3C2440_NFCONT_INITECC     (1<<4)
+#define S3C2440_NFCONT_nFCE        (1<<1)
+#define S3C2440_NFCONT_MAINECCLOCK (1<<5)
+#define S3C2440_NFCONF_TACLS(x)    ((x)<<12)
+#define S3C2440_NFCONF_TWRPH0(x)   ((x)<<8)
+#define S3C2440_NFCONF_TWRPH1(x)   ((x)<<4)
+
+#define S3C2440_ADDR_NALE 0x08
+#define S3C2440_ADDR_NCLE 0x0c
+
+ulong IO_ADDR_W = NF_BASE;
 
 #ifdef CONFIG_NAND_SPL
 
@@ -40,31 +43,31 @@ static void nand_read_buf(struct mtd_info *mtd, u_char *buf, int len)
 
 static void s3c2440_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 {
-	struct nand_chip *chip = mtd->priv;
+//	struct nand_chip *chip = mtd->priv;
 	struct s3c2440_nand *nand = s3c2440_get_base_nand();
 
 	debug("hwcontrol(): 0x%02x 0x%02x\n", cmd, ctrl);
 
 	if (ctrl & NAND_CTRL_CHANGE) {
-		ulong IO_ADDR_W = (ulong)nand;
+		IO_ADDR_W = (ulong)nand;
 
 		if (!(ctrl & NAND_CLE))
 			IO_ADDR_W |= S3C2440_ADDR_NCLE;
 		if (!(ctrl & NAND_ALE))
 			IO_ADDR_W |= S3C2440_ADDR_NALE;
 
-		chip->IO_ADDR_W = (void *)IO_ADDR_W;
+//		chip->IO_ADDR_W = (void *)IO_ADDR_W;
 
 		if (ctrl & NAND_NCE)
-			writel(readl(&nand->nfconf) & ~S3C2440_NFCONF_nFCE,
-			       &nand->nfconf);
+			writel(readl(&nand->nfcont) & ~S3C2440_NFCONT_nFCE,
+			       &nand->nfcont);
 		else
-			writel(readl(&nand->nfconf) | S3C2440_NFCONF_nFCE,
-			       &nand->nfconf);
+			writel(readl(&nand->nfcont) | S3C2440_NFCONT_nFCE,
+			       &nand->nfcont);
 	}
 
 	if (cmd != NAND_CMD_NONE)
-		writeb(cmd, chip->IO_ADDR_W);
+		writeb(cmd, (void *)IO_ADDR_W);
 }
 
 static int s3c2440_dev_ready(struct mtd_info *mtd)
@@ -126,11 +129,11 @@ int board_nand_init(struct nand_chip *nand)
 	twrph1 =  CONFIG_S3C24XX_TWRPH1;
 #else
 	tacls = 4;
-	twrph0 = 8;
-	twrph1 = 8;
+	twrph0 = 2;
+	twrph1 = 0;
 #endif
 
-	cfg = S3C2440_NFCONF_EN;
+	cfg = 0;
 	cfg |= S3C2440_NFCONF_TACLS(tacls - 1);
 	cfg |= S3C2440_NFCONF_TWRPH0(twrph0 - 1);
 	cfg |= S3C2440_NFCONF_TWRPH1(twrph1 - 1);
@@ -167,6 +170,8 @@ int board_nand_init(struct nand_chip *nand)
 
 #ifdef CONFIG_S3C2440_NAND_BBT
 	nand->bbt_options |= NAND_BBT_USE_FLASH;
+#else
+	nand->bbt_options = 0;
 #endif
 
 	debug("end of nand_init\n");

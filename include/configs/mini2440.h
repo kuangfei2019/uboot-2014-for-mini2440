@@ -25,7 +25,7 @@
 #define CONFIG_MINI2440		/* on a SAMSUNG SMDK2410 Board */
 
 #define CONFIG_OF_LIBFDT
-#define CONFIG_SYS_TEXT_BASE	0x0
+#define CONFIG_SYS_TEXT_BASE	0x33f00000
 
 #define CONFIG_SYS_ARM_CACHE_WRITETHROUGH
 
@@ -65,11 +65,13 @@
 /************************************************************
  * USB support (currently only works with D-cache off)
  ************************************************************/
+/*
 #define CONFIG_USB_OHCI
 #define CONFIG_USB_OHCI_S3C24XX
 #define CONFIG_USB_KEYBOARD
 #define CONFIG_USB_STORAGE
 #define CONFIG_DOS_PARTITION
+*/
 
 /************************************************************
  * RTC
@@ -100,7 +102,7 @@
 #define CONFIG_CMD_NAND
 #define CONFIG_CMD_PING
 #define CONFIG_CMD_REGINFO
-#define CONFIG_CMD_USB
+//#define CONFIG_CMD_USB
 
 #define CONFIG_SYS_HUSH_PARSER
 #define CONFIG_CMDLINE_EDITING
@@ -112,8 +114,8 @@
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 
 #define CONFIG_NETMASK		255.255.255.0
-#define CONFIG_IPADDR		10.0.0.110
-#define CONFIG_SERVERIP		10.0.0.1
+#define CONFIG_IPADDR		192.168.1.228
+#define CONFIG_SERVERIP		192.168.1.76
 
 #if defined(CONFIG_CMD_KGDB)
 #define CONFIG_KGDB_BAUDRATE	115200	/* speed to run kgdb serial port */
@@ -123,7 +125,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT	"SMDK2410 # "
+#define CONFIG_SYS_PROMPT	"MINI2440 # "
 #define CONFIG_SYS_CBSIZE	256
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE	(CONFIG_SYS_CBSIZE + \
@@ -136,7 +138,7 @@
 #define CONFIG_SYS_MEMTEST_START	0x30000000	/* memtest works on */
 #define CONFIG_SYS_MEMTEST_END		0x33F00000	/* 63 MB in DRAM */
 
-#define CONFIG_SYS_LOAD_ADDR		0x30800000
+#define CONFIG_SYS_LOAD_ADDR		0x30008000
 
 /* support additional compression methods */
 #define CONFIG_BZIP2
@@ -175,7 +177,7 @@
 #ifdef CONFIG_SST_VF1601
 #define PHYS_FLASH_SIZE         0x00200000 /* 512KB */
 #define CONFIG_SYS_MAX_FLASH_SECT       (32)    /* max number of sectors on one chip */
-#define CONFIG_ENV_ADDR         (CONFIG_SYS_FLASH_BASE + 0x060000) /* addr of environment */
+#define CONFIG_ENV_ADDR         (CONFIG_SYS_FLASH_BASE + 0x80000) /* addr of environment */
 #endif
 
 
@@ -188,7 +190,8 @@
 #define CONFIG_SYS_MAX_FLASH_BANKS	1
 #define CONFIG_SYS_FLASH_BANKS_LIST     { CONFIG_SYS_FLASH_BASE }
 
-#define CONFIG_ENV_IS_IN_FLASH
+//#define CONFIG_ENV_IS_IN_FLASH
+#define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_ENV_SIZE			0x20000
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
@@ -205,11 +208,12 @@
 /*
  * NAND configuration
  */
+#define CONFIG_ENV_OFFSET 0x80000
 #ifdef CONFIG_CMD_NAND
 //#define CONFIG_NAND_S3C2410
 //#define CONFIG_SYS_S3C2410_NAND_HWECC
 #define CONFIG_NAND_S3C2440
-#define CONFIG_SYS_S3C2440_NAND_HWECC
+//#define CONFIG_SYS_S3C2440_NAND_HWECC
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0x4E000000
 #define SECTORSIZE 512
@@ -241,7 +245,7 @@
 #define CONFIG_SYS_INIT_SP_ADDR	(CONFIG_SYS_SDRAM_BASE + 0x1000 - \
 				GENERATED_GBL_DATA_SIZE)
 
-#define CONFIG_SYS_GBL_DATA_SIZE 128
+//#define CONFIG_SYS_GBL_DATA_SIZE 128
 #define CONFIG_BOARD_EARLY_INIT_F
 
 #endif /* __CONFIG_H */

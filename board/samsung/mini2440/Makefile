@@ -5,5 +5,5 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-y	:= mini2440.o flash.o
-obj-y	+= lowlevel_init.o nand_read.o
+obj-y	:= mini2440.o flash.o init.o
+obj-y	+= lowlevel_init.o

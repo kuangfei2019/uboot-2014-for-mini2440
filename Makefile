@@ -199,7 +199,7 @@ ifeq ($(HOSTARCH),$(ARCH))
 CROSS_COMPILE ?=
 endif
 ARCH = arm
-CROSS_COMPILE ?= /usr/local/arm/arm-2009q3/bin/arm-none-linux-gnueabi-
+CROSS_COMPILE ?= /usr/local/arm/opt/FriendlyARM/toolschain/4.4.3/bin/arm-none-linux-gnueabi-
 
 # SHELL used by kbuild
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
@@ -1120,14 +1120,14 @@ checkdtc:
 
 # ARM relocations should all be R_ARM_RELATIVE (32-bit) or
 # R_AARCH64_RELATIVE (64-bit).
-checkarmreloc: u-boot
-	@RELOC="`$(CROSS_COMPILE)readelf -r -W $< | cut -d ' ' -f 4 | \
-		grep R_A | sort -u`"; \
-	if test "$$RELOC" != "R_ARM_RELATIVE" -a \
-		 "$$RELOC" != "R_AARCH64_RELATIVE"; then \
-		echo "$< contains unexpected relocations: $$RELOC"; \
-		false; \
-	fi
+#checkarmreloc: u-boot
+#	@RELOC="`$(CROSS_COMPILE)readelf -r -W $< | cut -d ' ' -f 4 | \
+#		grep R_A | sort -u`"; \
+#	if test "$$RELOC" != "R_ARM_RELATIVE" -a \
+#		 "$$RELOC" != "R_AARCH64_RELATIVE"; then \
+#		echo "$< contains unexpected relocations: $$RELOC"; \
+#		false; \
+#	fi
 
 env: scripts_basic
 	$(Q)$(MAKE) $(build)=tools/$@

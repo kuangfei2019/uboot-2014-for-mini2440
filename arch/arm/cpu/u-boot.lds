@@ -19,8 +19,8 @@ SECTIONS
 	{
 		*(.__image_copy_start)
 		CPUDIR/start.o (.text*)
-                board/samsung/mini2440/built-in.o (.text)
-                arch/arm/lib/built-in.o (.text)
+                board/samsung/mini2440/built-in.o (.text*)
+                arch/arm/lib/built-in.o (.text*)
 		*(.text*)
 	}
 

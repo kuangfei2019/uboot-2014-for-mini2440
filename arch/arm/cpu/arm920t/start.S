@@ -12,10 +12,6 @@
 #include <common.h>
 #include <config.h>
 
-#define STACK_BASE 0x33f00000
-#define STACK_SIZE 0x10000
-#define TEXT_BASE  0X33f80040
-
 /*
  *************************************************************************
  *
@@ -59,7 +55,7 @@ _fiq:			.word fiq
  */
 
 _TEXT_BASE:
-	.word	TEXT_BASE
+	.word CONFIG_SYS_TEXT_BASE	
 
 #ifdef CONFIG_USE_IRQ
 /* IRQ stack memory (calculated at run-time) */
@@ -179,194 +175,6 @@ copyex:
 	bl	cpu_init_crit
 #endif
 
-/***************** CHECK_CODE_POSITION ******************************************/
-
-	adr	r0, _start		/* r0 <- current position of code   */
-	ldr	r1, _TEXT_BASE		/* test if we run from flash or RAM */
-	cmp	r0, r1			/* don't reloc during debug         */
-	beq	stack_setup
-
-/***************** CHECK_CODE_POSITION ******************************************/
-
-/***************** CHECK_BOOT_FLASH ******************************************/
-
-	ldr	r1, =( (4<<28)|(3<<4)|(3<<2) )		/* address of Internal SRAM  0x4000003C*/
-	mov	r0, #0		/* r0 = 0 */
-	str	r0, [r1]
-
-
-	mov	r1, #0x3c		/* address of men  0x0000003C*/
-	ldr	r0, [r1]
-	cmp	r0, #0
-	bne     relocate_code	
-
-	/* recovery  */
-	ldr	r0, =(0xdeadbeef)
-	ldr	r1, =( (4<<28)|(3<<4)|(3<<2) )
-	str	r0, [r1]
-/***************** CHECK_BOOT_FLASH ******************************************/
-
-/***************** NAND_BOOT *************************************************/
-
-#define LENGTH_UBOOT 0x60000
-#define NAND_CTL_BASE 0x4E000000
-
-#ifdef CONFIG_S3C2440
-/* Offset */
-#define oNFCONF 0x00
-#define oNFCONT 0x04
-#define oNFCMD 0x08
-#define oNFSTAT 0x20
-
-	@ reset NAND
-	mov	r1, #NAND_CTL_BASE
-	ldr	r2, =( (7<<12)|(7<<8)|(7<<4)|(0<<0) )
-	str	r2, [r1, #oNFCONF]
-	ldr	r2, [r1, #oNFCONF]
-	
-	ldr	r2, =( (1<<4)|(0<<1)|(1<<0) )	@ Active low CE Control 
-	str	r2, [r1, #oNFCONT]
-	ldr	r2, [r1, #oNFCONT]
-	
-	ldr	r2, =(0x6)	@ RnB Clear
-	str	r2, [r1, #oNFSTAT]
-	ldr	r2, [r1, #oNFSTAT]
-	
-	mov	r2, #0xff	@ RESET command
-	strb	r2, [r1, #oNFCMD]
-	
-	mov	r3, #0	@ wait
-nand1: 
-	add	r3, r3, #0x1
-	cmp	r3, #0xa
-	blt	nand1
-
-nand2:
-	ldr	r2, [r1, #oNFSTAT]	@ wait ready
-	tst	r2, #0x4
-	beq	nand2
-	
-	ldr	r2, [r1, #oNFCONT]
-	orr	r2, r2, #0x2	@ Flash Memory Chip Disable
-	str	r2, [r1, #oNFCONT]
-	
-	@ get read to call C functions (for nand_read())
-	ldr	sp, DW_STACK_START	@ setup stack pointer
-	mov	fp, #0	@ no previous frame, so fp=0
-
-	@ copy U-Boot to RAM
-	ldr	r0, =TEXT_BASE
-	mov	r1, #0x0
-	mov	r2, #LENGTH_UBOOT
-	bl	nand_read_ll
-	tst	r0, #0x0
-	beq	ok_nand_read
-
-bad_nand_read:
-loop2:
-	b	loop2	@ infinite loop
-ok_nand_read:
-	@ verify
-	mov	r0, #0
-	ldr	r1, =TEXT_BASE
-	mov	r2, #0x400	@ 4 bytes * 1024 = 4K-bytes
-go_next:
-	ldr	r3, [r0], #4
-	ldr	r4, [r1], #4
-	teq	r3, r4
-	bne	notmatch
-	subs	r2, r2, #4
-	beq	stack_setup
-	bne	go_next
-
-notmatch:
-loop3:
-	b	loop3	@ infinite loop
-#endif
-
-#ifdef	CONFIG_S3C2410
-
-/* Offset */
-#define oNFCONF 0x00
-#define oNFCMD 0x04
-#define oNFSTAT 0x10
-
-	@ reset NAND
-	mov	r1, #NAND_CTL_BASE
-	ldr	r2, =0xf830	@ initial value
-	str	r2, [r1, #oNFCONF]
-	ldr	r2, [r1, #oNFCONF]
-	bic	r2, r2, #0x800	@ enable chip
-	str	r2, [r1, #oNFCONF]
-	mov	r2, #0xff		@ RESET command
-	strb	r2, [r1, #oNFCMD]
-	
-	
-	mov	r3, #0	@ wait
-nand1:
-	add	r3, r3, #0x1
-	cmp	r3, #0xa
-	blt	nand1
-
-nand2:
-	ldr	r2, [r1, #oNFSTAT]	@ wait ready
-	tst	r2, #0x1
-	beq	nand2
-	
-	ldr	r2, [r1, #oNFCONF]
-	orr	r2, r2, #0x800	@ disable chip
-	str	r2, [r1, #oNFCONF]
-	
-	@ get read to call C functions (for nand_read())
-	ldr	sp, DW_STACK_START	@ setup stack pointer
-	mov	fp, #0	@ no previous frame, so fp=0
-	
-	@ copy U-Boot to RAM
-	ldr	r0, =TEXT_BASE
-	mov	r1, #0x0
-	mov	r2, #LENGTH_UBOOT
-	bl	nand_read_ll
-	tst	r0, #0x0
-	beq	ok_nand_read
-
-bad_nand_read:
-loop2:
-	b	loop2	@ infinite loop
-
-
-ok_nand_read:
-	@ verify
-	mov	r0, #0
-	ldr	r1, =TEXT_BASE
-	mov	r2, #0x400	@ 4 bytes * 1024 = 4K-bytes
-go_next:
-	ldr	r3, [r0], #4
-	ldr	r4, [r1], #4
-	teq	r3, r4
-	bne	notmatch
-	subs	r2, r2, #4
-	beq	stack_setup
-	bne	go_next
-
-notmatch:
-loop3:
-	b	loop3	@ infinite loop
-
-#endif
-/***************** NAND_BOOT *************************************************/
-
-/***************** NOR_BOOT *************************************************/
-
-	/* Set up the stack						    */
-stack_setup:
-	ldr	r0, _TEXT_BASE		/* upper 128 KiB: relocated uboot   */
-	sub	r0, r0, #CONFIG_SYS_MALLOC_LEN	/* malloc area              */
-	sub	r0, r0, #CONFIG_SYS_GBL_DATA_SIZE /* bdinfo                 */
-#ifdef CONFIG_USE_IRQ
-	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
-#endif
-	sub	sp, r0, #12		/* leave 3 words for abort-stack    */
-
 	bl	_main
 
 /*------------------------------------------------------------------------------*/
@@ -420,7 +228,6 @@ cpu_init_crit:
 	mov	pc, lr
 #endif /* CONFIG_SKIP_LOWLEVEL_INIT */
 
-DW_STACK_START: .word   STACK_BASE + STACK_SIZE - 4
 
 /*
  *************************************************************************

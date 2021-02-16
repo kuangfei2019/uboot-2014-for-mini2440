@@ -18,27 +18,48 @@ DECLARE_GLOBAL_DATA_PTR;
 
 #define FCLK_SPEED 1
 
-#if FCLK_SPEED==0		/* Fout = 203MHz, Fin = 12MHz for Audio */
-#define M_MDIV	0xC3
-#define M_PDIV	0x4
-#define M_SDIV	0x1
-#elif FCLK_SPEED==1		/* Fout = 202.8MHz */
-#define M_MDIV	0xA1
-#define M_PDIV	0x3
-#define M_SDIV	0x1
+#if FCLK_SPEED==0               /* Fout = 203MHz, Fin = 12MHz for Audio */
+#define M_MDIV  0xC3
+#define M_PDIV  0x4
+#define M_SDIV  0x1
+#elif FCLK_SPEED==1             /* Fout = 202.8MHz */
+
+#if defined(CONFIG_S3C2410)
+/* Fout = 202.8MHz */
+#define M_MDIV  0xA1
+#define M_PDIV  0x3
+#define M_SDIV  0x1
+#endif
+
+#if defined(CONFIG_S3C2440)
+/* Fout = 405MHz */
+#define M_MDIV 0x7f
+#define M_PDIV 0x2
+#define M_SDIV 0x1
+#endif
 #endif
 
 #define USB_CLOCK 1
 
 #if USB_CLOCK==0
-#define U_M_MDIV	0xA1
-#define U_M_PDIV	0x3
-#define U_M_SDIV	0x1
+#define U_M_MDIV        0xA1
+#define U_M_PDIV        0x3
+#define U_M_SDIV        0x1
 #elif USB_CLOCK==1
-#define U_M_MDIV	0x48
-#define U_M_PDIV	0x3
-#define U_M_SDIV	0x2
+
+#if defined(CONFIG_S3C2410)
+#define U_M_MDIV        0x48
+#define U_M_PDIV        0x3
 #endif
+
+#if defined(CONFIG_S3C2440)
+#define U_M_MDIV 0x38
+#define U_M_PDIV 0x2
+#endif
+
+#define U_M_SDIV        0x2
+#endif
+
 
 static inline void pll_delay(unsigned long loops)
 {
@@ -97,7 +118,7 @@ int board_early_init_f(void)
 int board_init(void)
 {
 	/* arch number of SMDK2410-Board */
-	gd->bd->bi_arch_number = MACH_TYPE_SMDK2410;
+	gd->bd->bi_arch_number = MACH_TYPE_MINI2440;
 
 	/* adress of boot parameters */
 	gd->bd->bi_boot_params = 0x30000100;
